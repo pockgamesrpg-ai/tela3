@@ -1,3 +1,4 @@
+```javascript
 const startShare = document.getElementById("startShare");
 const stopShare = document.getElementById("stopShare");
 
@@ -13,11 +14,16 @@ const message =
 const resolution =
     document.getElementById("resolution");
 
+const fullscreenBtn =
+    document.getElementById("fullscreenBtn");
+
 
 let screenStream = null;
 
 
-/* INICIAR COMPARTILHAMENTO */
+/* =========================================
+   INICIAR COMPARTILHAMENTO
+========================================= */
 
 startShare.addEventListener("click", async () => {
 
@@ -113,7 +119,9 @@ startShare.addEventListener("click", async () => {
 });
 
 
-/* PARAR COMPARTILHAMENTO */
+/* =========================================
+   PARAR COMPARTILHAMENTO
+========================================= */
 
 stopShare.addEventListener(
     "click",
@@ -152,3 +160,63 @@ function stopScreenShare() {
         "Nenhuma transmissão ativa.";
 
 }
+
+
+/* =========================================
+   TELA CHEIA
+========================================= */
+
+if (fullscreenBtn) {
+
+    fullscreenBtn.addEventListener("click", async () => {
+
+        try {
+
+            if (!document.fullscreenElement) {
+
+                await document.documentElement.requestFullscreen();
+
+            } else {
+
+                await document.exitFullscreen();
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Não foi possível ativar a tela cheia:",
+                error
+            );
+
+        }
+
+    });
+
+
+    /*
+     * Atualiza o texto do botão quando
+     * entra ou sai da tela cheia.
+     */
+
+    document.addEventListener(
+        "fullscreenchange",
+        () => {
+
+            if (document.fullscreenElement) {
+
+                fullscreenBtn.textContent =
+                    "⛶ Sair da tela cheia";
+
+            } else {
+
+                fullscreenBtn.textContent =
+                    "⛶ Tela cheia";
+
+            }
+
+        }
+    );
+
+}
+```
