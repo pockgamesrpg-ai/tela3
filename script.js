@@ -1,19 +1,11 @@
 ```javascript
-alert("O JAVASCRIPT ESTÁ FUNCIONANDO!");
+const botao = document.getElementById("entrar");
+const mensagem = document.getElementById("mensagem");
 
-const botao = document.getElementById("startShare");
+botao.addEventListener("click", () => {
 
-if (botao) {
+    mensagem.textContent =
+        "Bem-vindo à FAMILIA VERCETTI!";
 
-    botao.addEventListener("click", function () {
-
-        alert("O BOTÃO FOI CLICADO!");
-
-    });
-
-} else {
-
-    alert("NÃO ENCONTREI O BOTÃO!");
-
-}
+});
 ```
