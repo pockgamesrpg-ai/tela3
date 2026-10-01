@@ -1,209 +1,54 @@
 ```html
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>FAMILIA VERCETII</title>
+    <title>FAMILIA VERCETTI</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <div class="background"></div>
-
-    <header class="topbar">
-
-        <div class="logo">
-            <div class="logo-icon">V</div>
-
-            <div>
-                <h1>FAMILIA VERCETII</h1>
-                <span>Central de transmissão</span>
-            </div>
-        </div>
-
-        <div class="status">
-            <span class="status-dot"></span>
-            Sistema online
-        </div>
-
+    <header>
+        <h1>FAMILIA VERCETTI</h1>
+        <p>Bem-vindo ao nosso espaço.</p>
     </header>
-
 
     <main>
 
-        <section class="hero">
+        <section class="card">
 
-            <div class="hero-text">
-
-                <span class="tag">FAMILIA VERCETII</span>
-
-                <h2>
-                    Compartilhe sua tela
-                    <br>
-                    <strong>com sua família.</strong>
-                </h2>
-
-                <p>
-                    Compartilhe a tela do seu computador e, quando disponível,
-                    inclua também o áudio do sistema.
-                </p>
-
-                <div class="buttons">
-
-                    <button id="startShare" class="primary-button">
-                        <span>🖥️</span>
-                        Compartilhar tela
-                    </button>
-
-                    <button id="stopShare" class="secondary-button" disabled>
-                        ⛔ Parar transmissão
-                    </button>
-
-                    <button id="fullscreenBtn" class="fullscreen-button">
-                        ⛶ Tela cheia
-                    </button>
-
-                </div>
-
-                <div id="message" class="message">
-                    Nenhuma transmissão ativa.
-                </div>
-
+            <div class="icon">
+                V
             </div>
 
+            <h2>FAMILIA VERCETTI</h2>
 
-            <div class="preview-card">
+            <p>
+                Site oficial da Família Vercetti.
+            </p>
 
-                <div class="preview-header">
+            <button id="entrar">
+                Entrar
+            </button>
 
-                    <div class="preview-title">
-                        <span class="live-dot"></span>
-                        PRÉ-VISUALIZAÇÃO
-                    </div>
-
-                    <span id="resolution">--</span>
-
-                </div>
-
-                <div class="video-container">
-
-                    <video
-                        id="screenPreview"
-                        autoplay
-                        muted
-                        playsinline>
-                    </video>
-
-                    <div id="emptyPreview" class="empty-preview">
-
-                        <div class="monitor-icon">
-                            🖥️
-                        </div>
-
-                        <h3>Sua tela aparecerá aqui</h3>
-
-                        <p>
-                            Clique em "Compartilhar tela" para começar.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <section class="features">
-
-            <div class="feature">
-
-                <div class="feature-icon">🖥️</div>
-
-                <div>
-                    <h3>Tela inteira</h3>
-                    <p>Compartilhe seu desktop completo.</p>
-                </div>
-
-            </div>
-
-
-            <div class="feature">
-
-                <div class="feature-icon">🔊</div>
-
-                <div>
-                    <h3>Áudio do PC</h3>
-                    <p>Inclua o som do sistema quando suportado.</p>
-                </div>
-
-            </div>
-
-
-            <div class="feature">
-
-                <div class="feature-icon">🔒</div>
-
-                <div>
-                    <h3>Controle total</h3>
-                    <p>Você decide quando começar e parar.</p>
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <section class="instructions">
-
-            <h2>Como funciona?</h2>
-
-            <div class="steps">
-
-                <div class="step">
-                    <span>01</span>
-                    <h3>Clique em compartilhar</h3>
-                    <p>
-                        Escolha a tela, janela ou aba que deseja transmitir.
-                    </p>
-                </div>
-
-                <div class="step">
-                    <span>02</span>
-                    <h3>Ative o áudio</h3>
-                    <p>
-                        Na janela do navegador, marque a opção de compartilhar
-                        o áudio quando ela estiver disponível.
-                    </p>
-                </div>
-
-                <div class="step">
-                    <span>03</span>
-                    <h3>Comece a transmissão</h3>
-                    <p>
-                        Sua tela será exibida na pré-visualização.
-                    </p>
-                </div>
-
-            </div>
+            <p id="mensagem"></p>
 
         </section>
 
     </main>
 
-
     <footer>
-        © 2026 FAMILIA VERCETII — Todos os direitos reservados.
+        © 2026 FAMILIA VERCETTI
     </footer>
-
 
     <script src="script.js"></script>
 
 </body>
+
 </html>
 ```
