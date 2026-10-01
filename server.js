@@ -118,10 +118,18 @@ socket.on("message", function(message) {
         const room = rooms.get(roomCode);
 
         if (!room) {
-
             send(socket, {
                 type: "error",
                 message: "Sala não encontrada."
+            });
+
+            return;
+        }
+
+        if (!room.host) {
+            send(socket, {
+                type: "error",
+                message: "Transmissão não está ativa."
             });
 
             return;
@@ -172,7 +180,6 @@ socket.on("message", function(message) {
         if (socket.role === "viewer") {
 
             if (room.host) {
-
                 send(room.host, {
                     type: data.type,
                     viewerId: socket.id,
@@ -180,7 +187,6 @@ socket.on("message", function(message) {
                     answer: data.answer,
                     candidate: data.candidate
                 });
-
             }
 
             return;
