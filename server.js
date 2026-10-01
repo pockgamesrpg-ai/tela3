@@ -3,6 +3,7 @@ const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
 const path = require("path");
+const crypto = require("crypto");
 
 const app = express();
 
@@ -12,10 +13,6 @@ const wss = new WebSocket.Server({
     server
 });
 
-
-/* =========================================
-   ARQUIVOS DO SITE
-========================================= */
 
 app.use(express.static(__dirname));
 
@@ -29,10 +26,6 @@ app.get("/", (req, res) => {
 });
 
 
-/* =========================================
-   SALAS
-========================================= */
-
 const rooms = new Map();
 
 
@@ -41,21 +34,29 @@ function generateRoomCode() {
     const characters =
         "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    let code = "";
+    let code;
 
-    for (let i = 0; i < 6; i++) {
+    do {
 
-        code +=
-            characters[
-                Math.floor(
-                    Math.random() *
-                    characters.length
-                )
-            ];
+        code = "";
 
-    }
+        for (let i = 0; i < 6; i++) {
+
+            code +=
+                characters[
+                    Math.floor(
+                        Math.random() *
+                        characters.length
+                    )
+                ];
+
+        }
+
+    } while (rooms.has(code));
+
 
     return code;
+
 }
 
 
@@ -75,27 +76,104 @@ function send(socket, data) {
 }
 
 
-/* =========================================
-   WEBSOCKET
-========================================= */
+function sendViewersCount(room) {
+
+    const count =
+        room.viewers.size;
+
+
+    if (room.host) {
+
+        send(room.host, {
+
+            type: "viewer-count",
+
+            count
+
+        });
+
+    }
+
+}
+
+
+function closeRoom(roomCode) {
+
+    const room =
+        rooms.get(roomCode);
+
+
+    if (!room) {
+        return;
+    }
+
+
+    for (
+        const viewer
+        of room.viewers.values()
+    ) {
+
+        send(viewer.socket, {
+
+            type:
+                "stream-ended"
+
+        });
+
+        try {
+
+            viewer.socket.close();
+
+        } catch {}
+
+    }
+
+
+    if (room.host) {
+
+        try {
+
+            room.host.close();
+
+        } catch {}
+
+    }
+
+
+    rooms.delete(
+        roomCode
+    );
+
+}
+
 
 wss.on("connection", (socket) => {
 
-    console.log("Nova conexão WebSocket");
-
-
     socket.room = null;
+
     socket.role = null;
+
+    socket.id =
+        crypto.randomUUID();
+
+
+    console.log(
+        "WebSocket conectado:",
+        socket.id
+    );
 
 
     socket.on("message", (raw) => {
 
         let data;
 
+
         try {
 
             data =
-                JSON.parse(raw.toString());
+                JSON.parse(
+                    raw.toString()
+                );
 
         } catch {
 
@@ -108,25 +186,20 @@ wss.on("connection", (socket) => {
            CRIAR SALA
         ===================================== */
 
-        if (data.type === "create-room") {
+        if (
+            data.type ===
+            "create-room"
+        ) {
 
-            let roomCode;
-
-            do {
-
-                roomCode =
-                    generateRoomCode();
-
-            } while (
-                rooms.has(roomCode)
-            );
+            const roomCode =
+                generateRoomCode();
 
 
             const room = {
 
                 host: socket,
 
-                viewers: new Set()
+                viewers: new Map()
 
             };
 
@@ -146,7 +219,8 @@ wss.on("connection", (socket) => {
 
             send(socket, {
 
-                type: "room-created",
+                type:
+                    "room-created",
 
                 room:
                     roomCode
@@ -155,7 +229,8 @@ wss.on("connection", (socket) => {
 
 
             console.log(
-                `Sala criada: ${roomCode}`
+                "Sala criada:",
+                roomCode
             );
 
 
@@ -165,10 +240,13 @@ wss.on("connection", (socket) => {
 
 
         /* =====================================
-           ENTRAR NA SALA
+           ENTRAR
         ===================================== */
 
-        if (data.type === "join-room") {
+        if (
+            data.type ===
+            "join-room"
+        ) {
 
             const roomCode =
                 String(
@@ -186,7 +264,8 @@ wss.on("connection", (socket) => {
 
                 send(socket, {
 
-                    type: "error",
+                    type:
+                        "error",
 
                     message:
                         "Sala não encontrada."
@@ -202,10 +281,11 @@ wss.on("connection", (socket) => {
 
                 send(socket, {
 
-                    type: "error",
+                    type:
+                        "error",
 
                     message:
-                        "Esta transmissão não está ativa."
+                        "A transmissão não está ativa."
 
                 });
 
@@ -221,57 +301,54 @@ wss.on("connection", (socket) => {
                 "viewer";
 
 
-            room.viewers.add(socket);
+            const viewer = {
+
+                id:
+                    socket.id,
+
+                socket
+
+            };
+
+
+            room.viewers.set(
+                socket.id,
+                viewer
+            );
 
 
             send(socket, {
 
-                type: "joined",
+                type:
+                    "joined",
 
                 room:
-                    roomCode
-
-            });
-
-
-            /* Avisar o transmissor */
-
-            send(room.host, {
-
-                type: "viewer-joined",
+                    roomCode,
 
                 viewerId:
-                    socket._socket.remoteAddress +
-                    ":" +
-                    socket._socket.remotePort
+                    socket.id
 
             });
 
-
-            /* Enviar quantidade */
 
             send(room.host, {
 
-                type: "viewer-count",
+                type:
+                    "viewer-joined",
 
-                count:
-                    room.viewers.size
-
-            });
-
-
-            send(socket, {
-
-                type: "viewer-count",
-
-                count:
-                    room.viewers.size
+                viewerId:
+                    socket.id
 
             });
+
+
+            sendViewersCount(
+                room
+            );
 
 
             console.log(
-                `Espectador entrou na sala ${roomCode}`
+                `Viewer ${socket.id} entrou em ${roomCode}`
             );
 
 
@@ -281,7 +358,7 @@ wss.on("connection", (socket) => {
 
 
         /* =====================================
-           MENSAGENS WEBRTC
+           WEBRTC
         ===================================== */
 
         if (
@@ -291,7 +368,9 @@ wss.on("connection", (socket) => {
         ) {
 
             const room =
-                rooms.get(socket.room);
+                rooms.get(
+                    socket.room
+                );
 
 
             if (!room) {
@@ -299,64 +378,57 @@ wss.on("connection", (socket) => {
             }
 
 
-            /*
-             * Se for espectador,
-             * enviar para o transmissor.
-             */
+            const viewerId =
+                data.viewerId;
+
 
             if (
-                socket.role === "viewer" &&
-                room.host
+                socket.role ===
+                "viewer"
             ) {
 
-                send(room.host, {
+                if (
+                    room.host
+                ) {
 
-                    ...data,
+                    send(
+                        room.host,
+                        {
 
-                    viewerId:
-                        data.viewerId
+                            ...data,
 
-                });
+                            viewerId:
+                                socket.id
+
+                        }
+                    );
+
+                }
+
+                return;
 
             }
 
 
-            /*
-             * Se for transmissor,
-             * enviar para todos os espectadores
-             * ou para o espectador especificado.
-             */
-
-            else if (
-                socket.role === "host"
+            if (
+                socket.role ===
+                "host"
             ) {
 
-                if (data.viewerId) {
+                const viewer =
+                    room.viewers.get(
+                        viewerId
+                    );
 
-                    /*
-                     * Como cada viewer recebe
-                     * um ID criado pelo servidor,
-                     * procuramos pelo ID.
-                     */
 
-                    for (
-                        const viewer
-                        of room.viewers
-                    ) {
+                if (
+                    viewer
+                ) {
 
-                        if (
-                            viewer.viewerId ===
-                            data.viewerId
-                        ) {
-
-                            send(
-                                viewer,
-                                data
-                            );
-
-                        }
-
-                    }
+                    send(
+                        viewer.socket,
+                        data
+                    );
 
                 }
 
@@ -369,23 +441,29 @@ wss.on("connection", (socket) => {
 
 
         /* =====================================
-           ENCERRAR SALA
+           ENCERRAR
         ===================================== */
 
-        if (data.type === "stop-room") {
+        if (
+            data.type ===
+            "stop-room"
+        ) {
 
-            closeRoom(
-                socket.room
-            );
+            if (
+                socket.role ===
+                "host"
+            ) {
+
+                closeRoom(
+                    socket.room
+                );
+
+            }
 
         }
 
     });
 
-
-    /* =========================================
-       DESCONECTOU
-    ========================================= */
 
     socket.on("close", () => {
 
@@ -394,4 +472,101 @@ wss.on("connection", (socket) => {
 
 
         if (!roomCode) {
+            return;
+        }
+
+
+        const room =
+            rooms.get(
+                roomCode
+            );
+
+
+        if (!room) {
+            return;
+        }
+
+
+        if (
+            socket.role ===
+            "host"
+        ) {
+
+            for (
+                const viewer
+                of room.viewers.values()
+            ) {
+
+                send(
+                    viewer.socket,
+                    {
+
+                        type:
+                            "stream-ended"
+
+                    }
+                );
+
+
+                try {
+
+                    viewer.socket.close();
+
+                } catch {}
+
+            }
+
+
+            rooms.delete(
+                roomCode
+            );
+
+
+            console.log(
+                "Host saiu:",
+                roomCode
+            );
+
+
+            return;
+
+        }
+
+
+        if (
+            socket.role ===
+            "viewer"
+        ) {
+
+            room.viewers.delete(
+                socket.id
+            );
+
+
+            sendViewersCount(
+                room
+            );
+
+        }
+
+    });
+
+});
+
+
+const PORT =
+    process.env.PORT || 3000;
+
+
+server.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
+
+        console.log(
+            `FAMILIA VERCETTI online na porta ${PORT}`
+        );
+
+    }
+);
 ```
