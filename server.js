@@ -6,57 +6,40 @@ const crypto = require("crypto");
 
 const app = express();
 const server = http.createServer(app);
-
-const wss = new WebSocket.Server({
-server
-});
-
-app.use(express.static(__dirname));
-
-app.get("/", (req, res) => {
-res.sendFile(path.join(__dirname, "index.html"));
-});
+const wss = new WebSocket.Server({ server });
 
 const rooms = new Map();
 
-function generateRoomCode() {
-const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+app.use(express.static(__dirname));
 
-```
-let code;
-
-do {
-    code = "";
-
-    for (let i = 0; i < 6; i++) {
-        code += characters[
-            Math.floor(Math.random() * characters.length)
-        ];
-    }
-
-} while (rooms.has(code));
-
-return code;
-```
-
-}
+app.get("/", function(req, res) {
+res.sendFile(path.join(__dirname, "index.html"));
+});
 
 function send(socket, data) {
-if (
-socket &&
-socket.readyState === WebSocket.OPEN
-) {
+if (socket && socket.readyState === WebSocket.OPEN) {
 socket.send(JSON.stringify(data));
 }
 }
 
-function sendViewersCount(room) {
-if (room.host) {
-send(room.host, {
-type: "viewer-count",
-count: room.viewers.size
-});
+function createRoomCode() {
+const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+let code = "";
+
+```
+for (let i = 0; i < 6; i++) {
+    code += chars.charAt(
+        Math.floor(Math.random() * chars.length)
+    );
 }
+
+if (rooms.has(code)) {
+    return createRoomCode();
+}
+
+return code;
+```
+
 }
 
 function closeRoom(roomCode) {
@@ -67,7 +50,7 @@ if (!room) {
     return;
 }
 
-for (const viewer of room.viewers.values()) {
+room.viewers.forEach(function(viewer) {
     send(viewer.socket, {
         type: "stream-ended"
     });
@@ -75,52 +58,43 @@ for (const viewer of room.viewers.values()) {
     try {
         viewer.socket.close();
     } catch (error) {}
-}
-
-if (room.host) {
-    try {
-        room.host.close();
-    } catch (error) {}
-}
+});
 
 rooms.delete(roomCode);
+
+console.log("Sala encerrada: " + roomCode);
 ```
 
 }
 
-wss.on("connection", (socket) => {
+wss.on("connection", function(socket) {
 
 ```
+socket.id = crypto.randomUUID();
 socket.room = null;
 socket.role = null;
-socket.id = crypto.randomUUID();
 
-console.log(
-    "WebSocket conectado:",
-    socket.id
-);
+console.log("Cliente conectado: " + socket.id);
 
-socket.on("message", (raw) => {
+socket.on("message", function(message) {
 
     let data;
 
     try {
-        data = JSON.parse(raw.toString());
+        data = JSON.parse(message.toString());
     } catch (error) {
-        console.log("Mensagem inválida recebida.");
+        console.log("Mensagem inválida.");
         return;
     }
 
     if (data.type === "create-room") {
 
-        const roomCode = generateRoomCode();
+        const roomCode = createRoomCode();
 
-        const room = {
+        rooms.set(roomCode, {
             host: socket,
             viewers: new Map()
-        };
-
-        rooms.set(roomCode, room);
+        });
 
         socket.room = roomCode;
         socket.role = "host";
@@ -130,19 +104,14 @@ socket.on("message", (raw) => {
             room: roomCode
         });
 
-        console.log(
-            "Sala criada:",
-            roomCode
-        );
+        console.log("Sala criada: " + roomCode);
 
         return;
     }
 
     if (data.type === "join-room") {
 
-        const roomCode = String(
-            data.room || ""
-        )
+        const roomCode = String(data.room || "")
             .trim()
             .toUpperCase();
 
@@ -158,28 +127,12 @@ socket.on("message", (raw) => {
             return;
         }
 
-        if (!room.host) {
-
-            send(socket, {
-                type: "error",
-                message: "A transmissão não está ativa."
-            });
-
-            return;
-        }
-
         socket.room = roomCode;
         socket.role = "viewer";
 
-        const viewer = {
-            id: socket.id,
+        room.viewers.set(socket.id, {
             socket: socket
-        };
-
-        room.viewers.set(
-            socket.id,
-            viewer
-        );
+        });
 
         send(socket, {
             type: "joined",
@@ -192,13 +145,13 @@ socket.on("message", (raw) => {
             viewerId: socket.id
         });
 
-        sendViewersCount(room);
+        send(room.host, {
+            type: "viewer-count",
+            count: room.viewers.size
+        });
 
         console.log(
-            "Viewer " +
-            socket.id +
-            " entrou em " +
-            roomCode
+            "Viewer entrou na sala: " + roomCode
         );
 
         return;
@@ -216,15 +169,16 @@ socket.on("message", (raw) => {
             return;
         }
 
-        const viewerId = data.viewerId;
-
         if (socket.role === "viewer") {
 
             if (room.host) {
 
                 send(room.host, {
-                    ...data,
-                    viewerId: socket.id
+                    type: data.type,
+                    viewerId: socket.id,
+                    offer: data.offer,
+                    answer: data.answer,
+                    candidate: data.candidate
                 });
 
             }
@@ -234,103 +188,7 @@ socket.on("message", (raw) => {
 
         if (socket.role === "host") {
 
-            const viewer =
-                room.viewers.get(viewerId);
-
-            if (viewer) {
-                send(viewer.socket, data);
-            }
-
-        }
-
-        return;
-    }
-
-    if (data.type === "stop-room") {
-
-        if (socket.role === "host") {
-            closeRoom(socket.room);
-        }
-
-        return;
-    }
-
-});
-
-socket.on("close", () => {
-
-    const roomCode = socket.room;
-
-    if (!roomCode) {
-        return;
-    }
-
-    const room = rooms.get(roomCode);
-
-    if (!room) {
-        return;
-    }
-
-    if (socket.role === "host") {
-
-        for (
-            const viewer
-            of room.viewers.values()
-        ) {
-
-            send(viewer.socket, {
-                type: "stream-ended"
-            });
-
-            try {
-                viewer.socket.close();
-            } catch (error) {}
-        }
-
-        rooms.delete(roomCode);
-
-        console.log(
-            "Host saiu:",
-            roomCode
-        );
-
-        return;
-    }
-
-    if (socket.role === "viewer") {
-
-        room.viewers.delete(
-            socket.id
-        );
-
-        sendViewersCount(room);
-
-        console.log(
-            "Viewer saiu:",
-            socket.id
-        );
-    }
-
-});
+            const viewer = room.viewers.get(
+                data.viewerId
+            );
 ```
-
-});
-
-const PORT =
-process.env.PORT || 3000;
-
-server.listen(
-PORT,
-"0.0.0.0",
-() => {
-
-```
-    console.log(
-        "FAMILIA VERCETTI online na porta " +
-        PORT
-    );
-
-}
-```
-
-);
