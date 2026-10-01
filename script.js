@@ -1,206 +1,78 @@
 ```javascript
-const startShare = document.getElementById("startShare");
-const stopShare = document.getElementById("stopShare");
+document.addEventListener("DOMContentLoaded", () => {
 
-const screenPreview = document.getElementById("screenPreview");
-const emptyPreview = document.getElementById("emptyPreview");
-const message = document.getElementById("message");
-const resolution = document.getElementById("resolution");
-const fullscreenBtn = document.getElementById("fullscreenBtn");
+    const botao = document.getElementById("startShare");
+    const video = document.getElementById("screenPreview");
+    const vazio = document.getElementById("emptyPreview");
+    const mensagem = document.getElementById("message");
 
-let screenStream = null;
+    console.log("JavaScript carregado!");
 
-
-/* =========================================
-   VERIFICAR SUPORTE
-========================================= */
-
-function checkScreenShareSupport() {
-
-    if (!window.isSecureContext) {
-
-        message.textContent =
-            "O compartilhamento precisa ser aberto pelo HTTPS do Render.";
-
-        return false;
-    }
-
-    if (!navigator.mediaDevices) {
-
-        message.textContent =
-            "Seu navegador não disponibilizou acesso à mídia.";
-
-        return false;
-    }
-
-    if (!navigator.mediaDevices.getDisplayMedia) {
-
-        message.textContent =
-            "Seu navegador não suporta compartilhamento de tela.";
-
-        return false;
-    }
-
-    return true;
-}
-
-
-/* =========================================
-   INICIAR COMPARTILHAMENTO
-========================================= */
-
-startShare.addEventListener("click", async () => {
-
-    if (!checkScreenShareSupport()) {
+    if (!botao) {
+        console.error("BOTÃO startShare NÃO ENCONTRADO!");
         return;
     }
 
-    try {
+    console.log("Botão encontrado!");
 
-        message.textContent =
-            "Abrindo a seleção de tela...";
+    botao.addEventListener("click", async () => {
 
+        console.log("BOTÃO CLICADO!");
 
-        /*
-         * IMPORTANTE:
-         * O áudio depende do navegador e da opção
-         * escolhida pelo usuário na janela de compartilhamento.
-         */
-
-        screenStream =
-            await navigator.mediaDevices.getDisplayMedia({
-
-                video: {
-                    cursor: "always"
-                },
-
-                audio: true
-
-            });
-
-
-        const videoTrack =
-            screenStream.getVideoTracks()[0];
-
-
-        if (!videoTrack) {
-
-            throw new Error(
-                "Nenhuma faixa de vídeo foi encontrada."
-            );
-
-        }
-
-
-        /* =====================================
-           MOSTRAR PRÉ-VISUALIZAÇÃO
-        ===================================== */
-
-        screenPreview.srcObject = screenStream;
-
-        screenPreview.style.display = "block";
-
-        emptyPreview.style.display = "none";
-
-
-        /*
-         * Força o vídeo a começar.
-         */
+        mensagem.textContent = "Abrindo seleção de tela...";
 
         try {
 
-            await screenPreview.play();
+            if (!navigator.mediaDevices) {
+                throw new Error("mediaDevices não está disponível.");
+            }
 
-        } catch (error) {
+            if (!navigator.mediaDevices.getDisplayMedia) {
+                throw new Error(
+                    "getDisplayMedia não está disponível neste navegador."
+                );
+            }
 
-            console.log(
-                "O navegador bloqueou o play automático:",
-                error
+            console.log("Abrindo getDisplayMedia...");
+
+            const stream =
+                await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+
+            console.log("Tela selecionada!", stream);
+
+            video.srcObject = stream;
+            video.style.display = "block";
+            vazio.style.display = "none";
+
+            mensagem.textContent =
+                "🟢 Compartilhamento iniciado!";
+
+            await video.play();
+
+            const faixa =
+                stream.getVideoTracks()[0];
+
+            faixa.addEventListener("ended", () => {
+
+                video.srcObject = null;
+
+                video.style.display = "none";
+                vazio.style.display = "flex";
+
+                mensagem.textContent =
+                    "Compartilhamento encerrado.";
+
+            });
+
+        } catch (erro) {
+
+            console.error(
+                "ERRO NO COMPARTILHAMENTO:",
+                erro
             );
 
-        }
-
-
-        /* =====================================
-           ATUALIZAR BOTÕES
-        ===================================== */
-
-        startShare.disabled = true;
-
-        stopShare.disabled = false;
-
-
-        /* =====================================
-           RESOLUÇÃO
-        ===================================== */
-
-        const settings =
-            videoTrack.getSettings();
-
-
-        if (
-            settings.width &&
-            settings.height
-        ) {
-
-            resolution.textContent =
-                `${settings.width} × ${settings.height}`;
-
-        } else {
-
-            resolution.textContent = "HD";
-
-        }
-
-
-        /* =====================================
-           ÁUDIO
-        ===================================== */
-
-        const audioTracks =
-            screenStream.getAudioTracks();
-
-
-        if (audioTracks.length > 0) {
-
-            message.textContent =
-                "🟢 Tela e áudio do sistema sendo capturados.";
-
-        } else {
-
-            message.textContent =
-                "🟢 Tela sendo capturada. Nenhum áudio do sistema foi selecionado.";
-
-        }
-
-
-        /* =====================================
-           USUÁRIO PAROU PELO NAVEGADOR
-        ===================================== */
-
-        videoTrack.addEventListener(
-            "ended",
-            stopScreenShare
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao compartilhar tela:",
-            error
-        );
-
-
-        /*
-         * Usuário simplesmente clicou em cancelar.
-         */
-
-        if (error.name === "NotAllowedError") {
-
-            message.textContent =
-                "Compartilhamento cancelado. Escolha uma tela e clique em Compartilhar.";
-
-        }
-
+            mensagem.textContent =
 ```
