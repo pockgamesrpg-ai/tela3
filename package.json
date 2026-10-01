@@ -1,8 +1,7 @@
-```json
 {
   "name": "familia-vercetti",
   "version": "1.0.0",
-  "description": "Sistema de transmissão de tela da Familia Vercetti",
+  "description": "Sistema de transmissao de tela da Familia Vercetti",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -12,4 +11,3 @@
     "ws": "^8.18.0"
   }
 }
-```
