@@ -1,3 +1,4 @@
+```css
 * {
     margin: 0;
     padding: 0;
@@ -272,6 +273,38 @@ button:disabled {
     border: 1px solid var(--border);
 
     font-size: 14px;
+}
+
+
+/* BOTÃO TELA CHEIA */
+
+.fullscreen-button {
+    padding: 15px 22px;
+
+    border-radius: 12px;
+
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #5b21b6,
+            #7c3aed
+        );
+
+    border: 1px solid rgba(168, 85, 247, 0.35);
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    box-shadow:
+        0 10px 30px rgba(124, 58, 237, 0.18);
+}
+
+.fullscreen-button:hover {
+    box-shadow:
+        0 12px 35px rgba(124, 58, 237, 0.35);
 }
 
 .message {
@@ -598,6 +631,7 @@ footer {
 
 }
 
+
 @media (max-width: 500px) {
 
     .topbar {
@@ -612,4 +646,16 @@ footer {
         font-size: 42px;
     }
 
+    .buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .primary-button,
+    .secondary-button,
+    .fullscreen-button {
+        width: 100%;
+    }
+
 }
+```
