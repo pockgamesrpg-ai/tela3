@@ -1,78 +1,19 @@
 ```javascript
-document.addEventListener("DOMContentLoaded", () => {
+alert("O JAVASCRIPT ESTÁ FUNCIONANDO!");
 
-    const botao = document.getElementById("startShare");
-    const video = document.getElementById("screenPreview");
-    const vazio = document.getElementById("emptyPreview");
-    const mensagem = document.getElementById("message");
+const botao = document.getElementById("startShare");
 
-    console.log("JavaScript carregado!");
+if (botao) {
 
-    if (!botao) {
-        console.error("BOTÃO startShare NÃO ENCONTRADO!");
-        return;
-    }
+    botao.addEventListener("click", function () {
 
-    console.log("Botão encontrado!");
+        alert("O BOTÃO FOI CLICADO!");
 
-    botao.addEventListener("click", async () => {
+    });
 
-        console.log("BOTÃO CLICADO!");
+} else {
 
-        mensagem.textContent = "Abrindo seleção de tela...";
+    alert("NÃO ENCONTREI O BOTÃO!");
 
-        try {
-
-            if (!navigator.mediaDevices) {
-                throw new Error("mediaDevices não está disponível.");
-            }
-
-            if (!navigator.mediaDevices.getDisplayMedia) {
-                throw new Error(
-                    "getDisplayMedia não está disponível neste navegador."
-                );
-            }
-
-            console.log("Abrindo getDisplayMedia...");
-
-            const stream =
-                await navigator.mediaDevices.getDisplayMedia({
-                    video: true,
-                    audio: true
-                });
-
-            console.log("Tela selecionada!", stream);
-
-            video.srcObject = stream;
-            video.style.display = "block";
-            vazio.style.display = "none";
-
-            mensagem.textContent =
-                "🟢 Compartilhamento iniciado!";
-
-            await video.play();
-
-            const faixa =
-                stream.getVideoTracks()[0];
-
-            faixa.addEventListener("ended", () => {
-
-                video.srcObject = null;
-
-                video.style.display = "none";
-                vazio.style.display = "flex";
-
-                mensagem.textContent =
-                    "Compartilhamento encerrado.";
-
-            });
-
-        } catch (erro) {
-
-            console.error(
-                "ERRO NO COMPARTILHAMENTO:",
-                erro
-            );
-
-            mensagem.textContent =
+}
 ```
